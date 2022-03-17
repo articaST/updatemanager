@@ -65,7 +65,6 @@ test:
 
 # Generate a package into packages register
 deploy_composer:
-  when: manual
   only:
     - tags
   stage: deploy
