@@ -5,7 +5,7 @@ stages:
 
 build:
   stage: build
-  image: fbsanchez/httpphp:7-runner
+  image: fbsanchez/httpdphp:7-runner
   script:
     - composer install
   cache:
