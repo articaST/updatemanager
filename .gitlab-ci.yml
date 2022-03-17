@@ -21,15 +21,15 @@ test:
     paths:
       - vendor
   variables:
-    - DOCKER_DRIVER: overlay2
-    - TEST: client
-    - DBUSER: root
-    - DBHOST: 127.0.0.1
-    - DBPASS: pandora
-    - DBNAME: um
-    - SOURCE_DIR: /root/code
-    - APACHE_USER: apache
-    - APACHE_GROUP: apache
+    DOCKER_DRIVER: overlay2
+    TEST: client
+    DBUSER: root
+    DBHOST: 127.0.0.1
+    DBPASS: pandora
+    DBNAME: um
+    SOURCE_DIR: /root/code
+    APACHE_USER: apache
+    APACHE_GROUP: apache
   script:
     - echo ">> Starting mysql service"
     - sudo -u mysql mysqld &
