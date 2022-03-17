@@ -57,7 +57,7 @@ test:
     - bash /entrypoint.sh &
     - sleep 5
     - rm -rf $SOURCE_DIR/client
-    - mv ${CI_PROJECT_DIR} $SOURCE_DIR/client
+    - cp -rp ${CI_PROJECT_DIR} $SOURCE_DIR/client
     - cd $SOURCE_DIR
     - echo $(pwd)':'
     - echo "- Test client"
