@@ -24,8 +24,6 @@ test:
     DOCKER_DRIVER: overlay2
   script:
     # Login into registry
-    - mkdir -p /etc/docker/certs.d/aiur.artica.lan:5000
-    - echo "${DOCKER_REPO_CERT}" > /etc/docker/certs.d/aiur.artica.lan:5000/ca.crt
     - docker login -u artica -p $CI_LOGIN_REG aiur.artica.lan:5000
     - docker pull aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
     - docker run -v $(pwd):/root/code/client -e TEST=client -e DB=1 --rm --name test.taldarim.artica.lan_${CI_COMMIT_REF_SLUG} -i aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
