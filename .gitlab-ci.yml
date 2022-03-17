@@ -30,6 +30,7 @@ test:
     SOURCE_DIR: /root/code
     APACHE_USER: apache
     APACHE_GROUP: apache
+    TARGET: updatemanager
   script:
     - echo ">> Starting mysql service"
     - sudo -u mysql mysqld &
@@ -49,7 +50,7 @@ test:
     - mysql -q -u root -p$DBPASS um -e "INSERT INTO um_users (username, password, admin) VALUES ('admin', '5a7b2e919d9eb13cbcfcdaa0bda8bf6aec156a00e29448e96f1702676f70b119', 1);" 2>&1
     - echo 'xdebug.mode=coverage' >> /etc/php.ini 
     - echo 'memory_limit = 512M' >>  /etc/php.ini 
-    - echo -n "[Open Update Manager]\ndb_host = $DBHOST\n\db_user = $DBUSER\ndb_pass = $DBPASS\ndb_name = $DBNAME\nbuild_script_path = /var/www/html/extras/build_oum.sh\nenterprise_repo_path = repo/enterprise\nsourceforge_repo_url = http://sourceforge.net\nsourceforge_repo_path = /projects/pandora/files/Nightlies/7.0NG/Tarball\nsourceforge_cache_file = /tmp/pandora7.sourceforge.cache\npagination_size = 25\n;At the moment pandora/integria\nmode = pandora\nfree_license_sting = PANDORA-FREE\n" > $SOURCE_DIR/src/conf/server.ini
+    - echo -e "[Open Update Manager]\ndb_host = $DBHOST\ndb_user = $DBUSER\ndb_pass = $DBPASS\ndb_name = $DBNAME\nbuild_script_path = /var/www/html/extras/build_oum.sh\nenterprise_repo_path = repo/enterprise\nsourceforge_repo_url = http://sourceforge.net\nsourceforge_repo_path = /projects/pandora/files/Nightlies/7.0NG/Tarball\nsourceforge_cache_file = /tmp/pandora7.sourceforge.cache\npagination_size = 25\n;At the moment pandora/integria\nmode = pandora\nfree_license_sting = PANDORA-FREE\n" > $SOURCE_DIR/src/conf/server.ini
     - cp -Rp $SOURCE_DIR/src /var/www/html/$TARGET
     - echo '<meta HTTP-EQUIV="REFRESH" content="0; url=/'$TARGET'/">' > /var/www/html/index.html
     - chown $APACHE_USER:$APACHE_GROUP -R /var/www/html
