@@ -15,7 +15,7 @@ build:
 
 test:
   stage: test
-  image: aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
+  image: aiur.artica.lan:5000/um:master
   cache:
     key: umc0000
     paths:
