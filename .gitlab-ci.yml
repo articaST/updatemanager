@@ -37,18 +37,18 @@ test:
     - while [ "`ps aux | grep mysqld | grep -v grep | grep -v sudo | wc -l`" == "0" ]; do echo "-- Waiting (5) until service mysql is available"; sleep 5; done
     - echo ">> Setting password for root"
     - if [ -e '/var/log/mysql/mysqld.log' ]; then sqllogfile='/var/log/mysql/mysqld.log'; centos=8; else sqllogfile='/var/log/mysqld.log'; centos=7; fi
-    - echo "set password='pandora'" | mysql -p$(cat $sqllogfile | grep temporary | awk '{print $NF}') --connect-expired-password
-    - mysql -q -u root -ppandora -e "grant all privileges on *.* to 'root'@'%' identified by 'pandora' with grant option;" 2>&1
-    - mysql -q -u root -ppandora -e "SET GLOBAL time_zone = '+2:00';"
-    - mysql -q -u root -ppandora -e "create database um"
-    - mysql -q -u root -ppandora um < $SOURCE_DIR/db/tables.sql 2>&1
-    - if [ $centos -eq 7 ]; then mysql -q -u root -ppandora -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'pandora'"; fi
+    - echo "set password='$DBPASS'" | mysql -p$(cat $sqllogfile | grep temporary | awk '{print $NF}') --connect-expired-password
+    - echo "grant all privileges on *.* to 'root'@'%' identified by '$DBPASS' with grant option;" |mysql -q -u root -p$DBPASS 2>&1
+    - mysql -q -u root -p$DBPASS -e "SET GLOBAL time_zone = '+2:00';"
+    - mysql -q -u root -p$DBPASS -e "create database um"
+    - mysql -q -u root -p$DBPASS um < $SOURCE_DIR/db/tables.sql 2>&1
+    - if [ $centos -eq 7 ]; then mysql -q -u root -p$DBPASS -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$DBPASS'"; fi
     - echo ">> Installing DB schema"
-    - mysql -q -u root -ppandora um < $SOURCE_DIR/db/tables.sql 2>&1
+    - mysql -q -u root -p$DBPASS um < $SOURCE_DIR/db/tables.sql 2>&1
     - echo ">> Loading countries information"
-    - mysql -q -u root -ppandora um < $SOURCE_DIR/db/geocountry.sql 2>&1
-    - echo ">> Adding admin user (admin // pandora)"
-    - mysql -q -u root -ppandora um -e "INSERT INTO um_users (username, password, admin) VALUES ('admin', '5a7b2e919d9eb13cbcfcdaa0bda8bf6aec156a00e29448e96f1702676f70b119', 1);" 2>&1
+    - mysql -q -u root -p$DBPASS um < $SOURCE_DIR/db/geocountry.sql 2>&1
+    - echo ">> Adding admin user (admin // $DBPASS)"
+    - mysql -q -u root -p$DBPASS um -e "INSERT INTO um_users (username, password, admin) VALUES ('admin', '5a7b2e919d9eb13cbcfcdaa0bda8bf6aec156a00e29448e96f1702676f70b119', 1);" 2>&1
     - echo 'xdebug.mode=coverage' >> /etc/php.ini 
     - echo 'memory_limit = 512M' >>  /etc/php.ini 
     - echo -n "[Open Update Manager]\ndb_host = $DBHOST\n\db_user = $DBUSER\ndb_pass = $DBPASS\ndb_name = $DBNAME\nbuild_script_path = /var/www/html/extras/build_oum.sh\nenterprise_repo_path = repo/enterprise\nsourceforge_repo_url = http://sourceforge.net\nsourceforge_repo_path = /projects/pandora/files/Nightlies/7.0NG/Tarball\nsourceforge_cache_file = /tmp/pandora7.sourceforge.cache\npagination_size = 25\n;At the moment pandora/integria\nmode = pandora\nfree_license_sting = PANDORA-FREE\n" > $SOURCE_DIR/src/conf/server.ini
