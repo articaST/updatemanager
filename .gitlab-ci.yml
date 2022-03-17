@@ -26,7 +26,7 @@ test:
     # Login into registry
     - docker login -u artica -p $CI_LOGIN_REG aiur.artica.lan:5000
     - docker pull aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
-    - docker run -v ${CI_PROJECT_DIR}:/root/code/client -e TEST=client -e DB=1 --rm --name test.taldarim.artica.lan_${CI_COMMIT_REF_SLUG} -i aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
+    - docker run -v ${CI_PROJECT_DIR}:/root/code/client -e TEST=0 -e DB=1 --rm --name test.taldarim.artica.lan_${CI_COMMIT_REF_SLUG} -i aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
 
 # Generate a package into packages register
 deploy_composer:
