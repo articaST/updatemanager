@@ -38,7 +38,6 @@ test:
     - echo ">> Setting password for root"
     - if [ -e '/var/log/mysql/mysqld.log' ]; then sqllogfile='/var/log/mysql/mysqld.log'; centos=8; else sqllogfile='/var/log/mysqld.log'; centos=7; fi
     - echo "set password='$DBPASS'" | mysql -p$(cat $sqllogfile | grep temporary | awk '{print $NF}') --connect-expired-password
-    - echo "grant all privileges on *.* to 'root'@'%' identified by '$DBPASS' with grant option;" |mysql -q -u root -p$DBPASS 2>&1
     - mysql -q -u root -p$DBPASS -e "SET GLOBAL time_zone = '+2:00';"
     - mysql -q -u root -p$DBPASS -e "create database um"
     - mysql -q -u root -p$DBPASS um < $SOURCE_DIR/db/tables.sql 2>&1
