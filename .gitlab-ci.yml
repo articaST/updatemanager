@@ -16,7 +16,12 @@ build:
 test:
   stage: test
   image: aiur.artica.lan:5000/um:${CI_COMMIT_REF_SLUG}
-  environment:
+  cache:
+    key: umc0000
+    paths:
+      - vendor
+  variables:
+    - DOCKER_DRIVER: overlay2
     - TEST: client
     - DBUSER: root
     - DBHOST: 127.0.0.1
@@ -25,12 +30,6 @@ test:
     - SOURCE_DIR: /root/code
     - APACHE_USER: apache
     - APACHE_GROUP: apache
-  cache:
-    key: umc0000
-    paths:
-      - vendor
-  variables:
-    DOCKER_DRIVER: overlay2
   script:
     - echo ">> Starting mysql service"
     - sudo -u mysql mysqld &
@@ -61,9 +60,9 @@ test:
     - rm -rf $SOURCE_DIR/client
     - mv ${CI_PROJECT_DIR} $SOURCE_DIR/client
     - cd $SOURCE_DIR
-	  - echo $(pwd)':'
-	  - echo "- Test client"
-	  - vendor/phpunit/phpunit/phpunit --coverage-text --testsuite client
+    - echo $(pwd)':'
+    - echo "- Test client"
+    - vendor/phpunit/phpunit/phpunit --coverage-text --testsuite client
 
 # Generate a package into packages register
 deploy_composer:
