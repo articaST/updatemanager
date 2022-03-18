@@ -93,6 +93,13 @@ class Manager
      */
     private $allowOfflinePatches = false;
 
+    /**
+     * Affects getUrl in order to map resources.
+     *
+     * @var boolean
+     */
+    private $composer = false;
+
 
     /**
      * Undocumented function
@@ -109,12 +116,14 @@ class Manager
         ?string $ajax_url=null,
         ?string $page=null,
         array $settings,
-        ?int $mode=null
+        ?int $mode=null,
+        bool $composer=false
     ) {
         $this->mode = 0;
         $this->publicUrl = '/';
         $this->ajaxUrl = '/';
         $this->mode = self::MODE_ONLINE;
+        $this->composer = $composer;
 
         if (empty($public_url) === false) {
             $this->publicUrl = $public_url;
@@ -297,7 +306,12 @@ class Manager
      */
     public function getUrl(?string $relative_path)
     {
-        return $this->publicUrl.'vendor/articapfms/update_manager_client/'.$relative_path;
+        $path = 'vendor/articapfms/update_manager_client/';
+        if ($this->composer === false) {
+            $path = '';
+        }
+
+        return $this->publicUrl.$path.$relative_path;
     }
 
 
