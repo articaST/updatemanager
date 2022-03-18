@@ -1,4 +1,7 @@
 <?php
+// phpcs:disable PSR1.Methods.CamelCapsMethodName
+namespace UpdateManager;
+
 require_once __DIR__.'/Repo.php';
 
 /**
@@ -11,13 +14,17 @@ class RepoDisk extends Repo
     /**
      * Class Constructor.
      *
-     * @param $path Path of the package repository.
+     * @param string $path      Path of the package repository.
+     * @param string $extension File extension.
+     *
+     * @throws \Exception On error.
      */
-    function __construct($path=false, $extension='oum')
+    public function __construct($path=false, $extension='oum')
     {
         // Check the repository can be opened.
-        if (($dh = opendir($path)) === false) {
-            throw new Exception('error opening repository '.$path);
+        $dh = opendir($path);
+        if ($dh === false) {
+            throw new \Exception('error opening repository '.$path);
         }
 
         closedir($dh);
@@ -30,6 +37,10 @@ class RepoDisk extends Repo
 
     /**
      * Delete a directory and its contents recursively
+     *
+     * @param string $dirname Directory to be cleaned.
+     *
+     * @return boolean
      */
     public static function delete_dir($dirname)
     {
@@ -60,6 +71,9 @@ class RepoDisk extends Repo
 
     /**
      * Load repository files.
+     *
+     * @return void
+     * @throws \Exception On Error.
      */
     protected function load()
     {
@@ -68,8 +82,9 @@ class RepoDisk extends Repo
         }
 
         // Read files in the repository.
-        if (($dh = opendir($this->path)) === false) {
-            throw new Exception('error opening repository');
+        $dh = opendir($this->path);
+        if ($dh === false) {
+            throw new \Exception('error opening repository');
         }
 
         $this->files = [];
@@ -92,6 +107,8 @@ class RepoDisk extends Repo
 
     /**
      * Reload repository files.
+     *
+     * @return void
      */
     public function reload()
     {

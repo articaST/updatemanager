@@ -94,6 +94,7 @@
                     'updated': "<?php echo __('Successfully updated.'); ?>",
                 }
 
+                var clientMode = '<?php echo $mode; ?>';
                 var ajaxPage = '<?php echo $ajaxPage; ?>';
 
                 window.onload = function() {

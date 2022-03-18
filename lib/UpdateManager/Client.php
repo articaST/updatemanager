@@ -273,32 +273,39 @@ class Client
      */
     private $offline;
 
+    /**
+     * Lock file installation if no db is available.
+     *
+     * @var string
+     */
+    private $lockfile;
+
 
     /**
      * Constructor.
      *
      * @param array|null $settings Update manager Client settings.
-     * - homedir (*): where project files are placed (e.g. config['homedir])
-     * - dbconnection: mysqli object (connected)
-     * - historydb: mysqli object (connected to historical database)
-     * - url (**): UMS url (update_manager_url)
-     *    - host: UMS host
-     *    - port: UMS port
-     *    - endpoint: UMS path (e.g. host:port/endpoint)
-     * - license: License string
-     * - registration_code: Registration code in UMS
-     * - insecure: insecure connections (SSL allow self-signed)
-     * - current_package: current package
-     * - tmp: Temporary directory
-     * - MR: current MR
-     * - proxy
-     *   - user
-     *   - password
-     *   - host
-     *   - port
+     *                             - homedir (*): where project files are placed (e.g. config['homedir])
+     *                             - dbconnection: mysqli object (connected)
+     *                             - historydb: mysqli object (connected to historical database)
+     *                             - url (**): UMS url (update_manager_url)
+     *                             - host: UMS host
+     *                             - port: UMS port
+     *                             - endpoint: UMS path (e.g. host:port/endpoint)
+     *                             - license: License string
+     *                             - registration_code: Registration code in UMS
+     *                             - insecure: insecure connections (SSL allow self-signed)
+     *                             - current_package: current package
+     *                             - tmp: Temporary directory
+     *                             - MR: current MR
+     *                             - proxy
+     *                             - user
+     *                             - password
+     *                             - host
+     *                             - port
      *
-     * (*) mandatory
-     * (**) Optionally, set full url instead host-port-endpoint.
+     *                             (*) mandatory
+     *                             (**) Optionally, set full url instead host-port-endpoint.
      *
      * @throws \Exception On error.
      */
@@ -456,6 +463,8 @@ class Client
             mkdir($this->remoteConfig.'/updates/');
             chmod($this->remoteConfig.'/updates/', 0770);
         }
+
+        $this->lockfile = $this->tmpDir.'/'.hash('sha256', $this->productPath).'.umc.lock';
     }
 
 
@@ -667,6 +676,8 @@ class Client
         }
 
         // phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.Found
+        // phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+        // phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
         curl_setopt(
             $ch,
             CURLOPT_PROGRESSFUNCTION,
@@ -710,7 +721,6 @@ class Client
         }
 
         return $response;
-
     }
 
 
@@ -718,8 +728,8 @@ class Client
      * Make a request to Update manager.
      *
      * @param array   $request Request:
-     *    action: string
-     *    arguments: array.
+     *                         action: string
+     *                         arguments: array.
      * @param boolean $literal Literal response, do not decode.
      *
      * @return mixed|null Parsed response if valid, false if error.
@@ -802,7 +812,6 @@ class Client
 
         $this->lastError = $rc;
         return false;
-
     }
 
 
@@ -1129,7 +1138,6 @@ class Client
         ksort($mr_files);
 
         return $mr_files;
-
     }
 
 
@@ -1411,10 +1419,10 @@ class Client
      * @param array|null $package Update to manually uploaded package.
      *                            Format:
      *                            [
-     *                              version
-     *                              file_path
+     *                            version
+     *                            file_path
      *                            ]
-     * Version: version to install, file_path where's stored the oum package.
+     *                            Version: version to install, file_path where's stored the oum package.
      *
      * @return boolean|null True if success, false if not, null if already
      *                      up to date.
@@ -1918,7 +1926,6 @@ class Client
                 );
             }
         }
-
     }
 
 
@@ -2221,7 +2228,6 @@ class Client
         if ($dbh->query($q) === false) {
             $this->lastError = $dbh->error;
         }
-
     }
 
 
@@ -2232,6 +2238,10 @@ class Client
      */
     public function getUpdateProgress():array
     {
+        if ($this->dbh === null) {
+            return [];
+        }
+
         // phpcs:disable Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
         $stm = $this->dbh->query(
             'SELECT `value` FROM `tconfig`
@@ -2320,19 +2330,18 @@ class Client
         }
 
         // No database available, use files.
-        $lock_file = sys_get_temp_dir().'/umc/lock';
-        if (file_exists($lock_file) === true) {
-            $lock_age = file_get_contents($lock_file);
+        if (file_exists($this->lockfile) === true) {
+            $lock_age = file_get_contents($this->lockfile);
 
             if ((time() - $lock_age) > self::MAX_LOCK_AGE) {
-                unlink($lock_file);
+                unlink($this->lockfile);
             } else {
                 // Locked.
                 return false;
             }
         }
 
-        file_put_contents($lock_file, time());
+        file_put_contents($this->lockfile, time());
 
         if (is_callable($this->setMaintenanceMode) === true) {
             call_user_func($this->setMaintenanceMode);
@@ -2353,9 +2362,8 @@ class Client
         if ($this->dbh !== null) {
             $this->dbh->query('SELECT RELEASE_LOCK("umc_lock")');
         } else {
-            $lock_file = sys_get_temp_dir().'/umc/lock';
-            if (file_exists($lock_file) === true) {
-                unlink($lock_file);
+            if (file_exists($this->lockfile) === true) {
+                unlink($this->lockfile);
             }
         }
 
@@ -2368,10 +2376,14 @@ class Client
     /**
      * Checking progress, check if any instance is running.
      *
-     * @return boolean
+     * @return boolean|null if no DB is set.
      */
-    public function isRunning():bool
+    public function isRunning():?bool
     {
+        if ($this->dbh === null) {
+            return file_exists($this->lockfile);
+        }
+
         $stm = $this->dbh->query(
             'SELECT IS_FREE_LOCK("umc_lock")'
         );

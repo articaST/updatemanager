@@ -1,5 +1,5 @@
 <?php
-// phpcs:disable Squiz.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
+// phpcs:disable PSR1.Methods.CamelCapsMethodName
 namespace UpdateManager;
 
 require_once __DIR__.'/RepoDisk.php';
@@ -8,7 +8,7 @@ require_once __DIR__.'/RepoDisk.php';
 /**
  * Class to implement distributed updates.
  */
-class RepoMC extends \RepoDisk
+class RepoMC extends RepoDisk
 {
 
     /**
@@ -24,11 +24,19 @@ class RepoMC extends \RepoDisk
      *
      * @param string|null $path      Path of the package repository.
      * @param string      $extension Files to include.
+     * @param string|null $skel      BAse name to identify server filename.
      *
      * @throws \Exception On error.
      */
-    public function __construct(?string $path=null, string $extension='oum')
-    {
+    public function __construct(
+        ?string $path=null,
+        string $extension='oum',
+        ?string $skel=null
+    ) {
+        if ($skel !== null) {
+            $this->FNAME = $skel;
+        }
+
         parent::__construct($path, $extension);
     }
 
@@ -107,7 +115,6 @@ class RepoMC extends \RepoDisk
         }
 
         return '';
-
     }
 
 

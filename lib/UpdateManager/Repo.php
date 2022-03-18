@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable PSR1.Methods.CamelCapsMethodName
+namespace UpdateManager;
 
 require_once 'constants.php';
 
@@ -29,12 +31,12 @@ abstract class Repo
      * @param string $path Path of the package repository.
      *
      * @return void
-     * @throws Exception On error.
+     * @throws \Exception On error.
      */
     public function __construct($path=false)
     {
         if ($path === false) {
-            throw new Exception('no repository path was provided');
+            throw new \Exception('no repository path was provided');
         }
 
         $this->path = $path;
@@ -47,7 +49,7 @@ abstract class Repo
      *
      * @return void
      */
-    protected abstract function load();
+    abstract protected function load();
 
 
     /**
@@ -55,7 +57,7 @@ abstract class Repo
      *
      * @return void
      */
-    public abstract function reload();
+    abstract public function reload();
 
 
     /**
@@ -125,7 +127,7 @@ abstract class Repo
      * @param string $package_name Name of the package.
      *
      * @return void
-     * @throws Exception Exception if the file was not found.
+     * @throws \Exception \Exception if the file was not found.
      */
     public function send_package($package_name)
     {
@@ -133,13 +135,13 @@ abstract class Repo
 
         // Check the file exists in the repo.
         if ($package_name == false || ! in_array($package_name, array_values($this->files))) {
-            throw new Exception('file not found in repository');
+            throw new \Exception('file not found in repository');
         }
 
         // Check if the file exists in the filesystem.
         $file = $this->path.'/'.$package_name;
         if (! file_exists($file)) {
-            throw new Exception('file not found');
+            throw new \Exception('file not found');
         }
 
         // Do not set headers if we are debugging!
@@ -159,7 +161,6 @@ abstract class Repo
         // Do not time out if the file is too big!
         set_time_limit(0);
         readfile($file);
-
     }
 
 
@@ -169,7 +170,7 @@ abstract class Repo
      * @param string $package_name Name of the package.
      *
      * @return void
-     * @throws Exception Exception if the file was not found.
+     * @throws \Exception \Exception if the file was not found.
      */
     public function send_package_signature($package_name)
     {
@@ -177,13 +178,13 @@ abstract class Repo
 
         // Check the file exists in the repo.
         if ($package_name == false || ! in_array($package_name, array_values($this->files))) {
-            throw new Exception('file not found in repository');
+            throw new \Exception('file not found in repository');
         }
 
         // Check if the file exists in the filesystem.
         $file = $this->path.'/'.$package_name.SIGNATURE_EXTENSION;
         if (! file_exists($file)) {
-            throw new Exception('file not found');
+            throw new \Exception('file not found');
         }
 
         // Send the signature.
@@ -195,9 +196,11 @@ abstract class Repo
      * Send back the requested server package. This function simply calls send_package.
      * Repos may implement their own version on top of it.
      *
-     * @param string $package_name Name of the package.
+     * @param string $file Name of the package.
+     *
+     * @return void
      */
-    function send_server_package($file)
+    public function send_server_package($file)
     {
         $this->send_package($file);
     }
@@ -208,9 +211,11 @@ abstract class Repo
      * simply calls send_package_signature.  * Repos may implement their own
      * version on top of it.
      *
-     * @param string $package_name Name of the package.
+     * @param string $file Name of the package.
+     *
+     * @return void
      */
-    function send_server_package_signature($file)
+    public function send_server_package_signature($file)
     {
         $this->send_package_signature($file);
     }

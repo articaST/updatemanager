@@ -34,7 +34,9 @@
     <script type="text/javascript">
         if (typeof $ != "function") {
             // Dynamically include jquery if not added to this page.
-            document.write('<script type="text/javascript" src="<?php echo $asset('resources/javascript/jquery.current.js'); ?>"></'+'script>');
+            document.write('<script type="text/javascript" src="<?php echo $asset('resources/javascript/jquery-3.3.1.min.js'); ?>"></'+'script>');
+            document.write('<script type="text/javascript" src="<?php echo $asset('resources/javascript/jquery-ui.min.js'); ?>"></'+'script>');
+            document.write('<script type="text/javascript" src="<?php echo $asset('resources/javascript/jquery.fileupload.js'); ?>"></'+'script>');
         }
     </script>
     <script src="<?php $asset('resources/javascript/umc.js'); ?>" type="text/javascript"></script>
@@ -88,6 +90,7 @@
         'notGoingToInstallUnoficialWarning': "<?php echo __('This update does not correspond with next version of %s and is not going to be installed unless patches are allowed. Please enable patches in update manager settings.', get_product_name()); ?>",
     }
 
+    var clientMode = <?php echo $mode; ?>;
     var insecureMode = <?php echo ($insecure === true) ? 'true' : 'false'; ?>;
     var ajaxPage = '<?php echo $ajaxPage; ?>';
     window.onload = function() {

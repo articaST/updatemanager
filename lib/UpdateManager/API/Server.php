@@ -87,7 +87,6 @@ class Server
         if (isset($settings['registration_code']) === true) {
             $this->registrationCode = $settings['registration_code'];
         }
-
     }
 
 
@@ -187,7 +186,6 @@ class Server
                 self::error(500, 'Error: '.$e->getMessage());
             }
         }
-
     }
 
 
@@ -219,7 +217,6 @@ class Server
         if ($reported_license !== $this->licenseToken) {
             throw new \Exception('Invalid license', 1);
         }
-
     }
 
 

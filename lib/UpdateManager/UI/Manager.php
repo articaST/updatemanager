@@ -29,6 +29,8 @@
 // Begin.
 namespace UpdateManager\UI;
 
+require_once __DIR__.'/../../../resources/helpers.php';
+
 use UpdateManager\Client;
 
 /**
@@ -104,8 +106,8 @@ class Manager
      */
     public function __construct(
         string $public_url,
-        string $ajax_url,
-        ?string $page,
+        ?string $ajax_url=null,
+        ?string $page=null,
         array $settings,
         ?int $mode=null
     ) {
@@ -120,6 +122,8 @@ class Manager
 
         if (empty($ajax_url) === false) {
             $this->ajaxUrl = $ajax_url;
+        } else {
+            $this->ajaxUrl = $this->publicUrl;
         }
 
         if (empty($page) === false) {
@@ -223,6 +227,7 @@ class Manager
                     'ajaxPage' => $this->ajaxPage,
                     'progress' => $this->umc->getUpdateProgress(),
                     'running'  => $this->umc->isRunning(),
+                    'mode'     => self::MODE_ONLINE,
                 ]
             );
         }
@@ -252,6 +257,7 @@ class Manager
                 'running'             => $this->umc->isRunning(),
                 'insecure'            => $this->umc->isInsecure(),
                 'allowOfflinePatches' => $this->allowOfflinePatches,
+                'mode'                => self::MODE_OFFLINE,
             ]
         );
     }
@@ -276,6 +282,7 @@ class Manager
                 'authCode' => $this->authCode,
                 'ajax'     => $this->ajaxUrl,
                 'ajaxPage' => $this->ajaxPage,
+                'mode'     => self::MODE_REGISTER,
             ]
         );
     }
@@ -290,7 +297,7 @@ class Manager
      */
     public function getUrl(?string $relative_path)
     {
-        return $this->publicUrl.'/'.$relative_path;
+        return $this->publicUrl.'vendor/articapfms/update_manager_client/'.$relative_path;
     }
 
 
@@ -417,7 +424,6 @@ class Manager
         } else {
             echo $return;
         }
-
     }
 
 
@@ -491,7 +497,6 @@ class Manager
         }
 
         return $return;
-
     }
 
 
@@ -615,7 +620,6 @@ class Manager
         $return['message'] = __('Failed uploading file.');
 
         return json_encode($return);
-
     }
 
 
@@ -630,9 +634,9 @@ class Manager
             session_start();
         }
 
-        $file_path = $_SESSION['umc-uploaded-file-path'];
-        $packageId = $_SESSION['umc-uploaded-file-id'];
-        $signature = $_REQUEST['signature'];
+        $file_path = ($_SESSION['umc-uploaded-file-path'] ?? null);
+        $packageId = ($_SESSION['umc-uploaded-file-id'] ?? null);
+        $signature = ($_REQUEST['signature'] ?? '');
         $version = $_SESSION['umc-uploaded-file-version'];
         $server_update = $_SESSION['umc-uploaded-type-server'];
 
@@ -657,7 +661,6 @@ class Manager
         }
 
         return $return;
-
     }
 
 
