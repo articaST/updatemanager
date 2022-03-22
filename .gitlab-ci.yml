@@ -79,3 +79,15 @@ deploy_composer:
     - job: test
   script:
     - curl -sS --show-error --fail --data tag=${CI_COMMIT_TAG} "https://__token__:${PACKAGE_DEPLOY_TOKEN}@brutus.artica.es:8081/api/v4/projects/${CI_PROJECT_ID}/packages/composer"
+
+# Generates a package into packagist.org
+deploy_packagist:
+  only:
+    - tags
+  stage: deploy
+  dependencies:
+    - test
+  needs:
+    - job: test
+  script:
+    - curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=articast&apiToken=${PACKAGIST_API_TOKEN}' -d'{"repository":{"url":"${PACKAGIST_PROJECT_URL}"}}'
