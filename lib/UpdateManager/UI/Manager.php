@@ -110,6 +110,7 @@ class Manager
      * @param array        $settings   UMC settings.
      * @param integer|null $mode       Update Manager mode (online, offline or
      *                                 register).
+     * @param boolean      $composer   Included from composer package or direct library.
      */
     public function __construct(
         string $public_url,
@@ -121,7 +122,7 @@ class Manager
     ) {
         $this->mode = 0;
         $this->publicUrl = '/';
-        $this->ajaxUrl = '/';
+        $this->ajaxUrl = '#';
         $this->mode = self::MODE_ONLINE;
         $this->composer = $composer;
 
@@ -132,7 +133,7 @@ class Manager
         if (empty($ajax_url) === false) {
             $this->ajaxUrl = $ajax_url;
         } else {
-            $this->ajaxUrl = $this->publicUrl;
+            $this->ajaxUrl = '#';
         }
 
         if (empty($page) === false) {
