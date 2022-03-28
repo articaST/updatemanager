@@ -91,4 +91,4 @@ deploy_packagist:
   needs:
     - job: test
   script:
-    - curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=articast&apiToken=${PACKAGIST_API_TOKEN}' -d'{"repository":{"url":"${PACKAGIST_PROJECT_URL}"}}'
+    - curl -XPOST -H'content-type:application/json' "https://packagist.org/api/update-package?username=articast&apiToken=$PACKAGIST_API_TOKEN" -d'{"repository":{"url":"$PACKAGIST_PROJECT_URL"}}'
