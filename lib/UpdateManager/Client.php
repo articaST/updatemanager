@@ -190,6 +190,13 @@ class Client
     private $updates;
 
     /**
+     * Available LTS updates.
+     *
+     * @var array
+     */
+    private $updatesLTS;
+
+    /**
      * Where is installed the product files.
      *
      * @var string
@@ -280,6 +287,13 @@ class Client
      */
     private $lockfile;
 
+    /**
+     * Search for long term support updates only.
+     *
+     * @var boolean
+     */
+    private $lts;
+
 
     /**
      * Constructor.
@@ -323,6 +337,7 @@ class Client
         $this->registrationCode = '';
         $this->license = '';
         $this->updates = [];
+        $this->$updatesLTS = [];
         $this->dbh = null;
         $this->dbhHistory = null;
         $this->MR = 0;
@@ -338,6 +353,7 @@ class Client
         $this->timezone = null;
         $this->propagateUpdates = false;
         $this->offline = false;
+        $this->lts = false;
 
         if (is_array($settings) === true) {
             if (isset($settings['homedir']) === true) {
@@ -417,6 +433,10 @@ class Client
 
             if (isset($settings['MR']) === true) {
                 $this->MR = $settings['MR'];
+            }
+
+            if (isset($settings['lts']) === true) {
+                $this->lts = $settings['lts'];
             }
 
             if (isset($settings['endpoint']) === true) {
@@ -745,6 +765,7 @@ class Client
             'limit_count'     => $this->limitCount,
             'language'        => $this->language,
             'timezone'        => $this->timezone,
+            'lts'             => $this->lts,
             // Retrocompatibility token.
             'version'         => $pandora_version,
             'puid'            => $this->registrationCode,
@@ -816,7 +837,47 @@ class Client
 
 
     /**
+     * Translate Open and Enterprise oum updates into rigth format.
+     *
+     * @param array   $updates Raw updates retrieved from UMS.
+     * @param boolean $lts     LTS updates or generic.
+     *
+     * @return array Translated updates.
+     */
+    private function translateUpdatePackages(array $updates, bool $lts)
+    {
+        $lts_ones = $this->updatesLTS;
+        return array_reduce(
+            $updates,
+            function ($carry, $item) use ($lts, $lts_ones) {
+                if (is_array($item) !== true
+                    && preg_match('/([\d\.\d]+?)\.tar/', $item, $matches) > 0
+                ) {
+                    $carry[] = [
+                        'version'     => $matches[1],
+                        'file_name'   => $item,
+                        'description' => '',
+                        'lts'         => ($lts === true) ? $lts : isset($lts_ones[$matches[1]]),
+                    ];
+                } else {
+                    $carry[] = array_merge(
+                        $item,
+                        ['lts' => ($lts === true) ? $lts : isset($lts_ones[$item['version']])]
+                    );
+                }
+
+                return $carry;
+            },
+            []
+        );
+    }
+
+
+    /**
      * Retrieves a list of updates available in target UMS.
+     *
+     * @param boolean $all Return all updates always, if disable, return only
+     * pre-configured ones (lts / on - off).
      *
      * @return array|null Results:
      * [
@@ -824,41 +885,59 @@ class Client
      *     'version'     => Version id.
      *     'file_name'   => File name.
      *     'description' => description.
+     *     'lts'         => Lts update or not.
      *   ]
      * ];
      */
-    public function listUpdates():?array
+    public function listUpdates(bool $all=true):?array
     {
         $this->nextUpdate = null;
         if (empty($this->updates) === true) {
-            $rc = $this->post([ 'action' => 'newer_packages' ]);
+            $rc = $this->post(
+                [
+                    'action'    => 'newer_packages',
+                    'arguments' => ['lts' => $this->lts],
+                ]
+            );
 
             if (is_array($rc) !== true) {
                 // Propagate last error from request.
                 return null;
             }
 
-            // Translate respone.
-            $this->updates = array_reduce(
-                $rc,
-                function ($carry, $item) {
-                    $matches = [];
-                    if (is_array($item) !== true
-                        && preg_match('/([\d\.\d]+?)\.tar/', $item, $matches) > 0
-                    ) {
-                        $carry[] = [
-                            'version'     => $matches[1],
-                            'file_name'   => $item,
-                            'description' => '',
-                        ];
-                    } else {
-                        $carry[] = $item;
+            // Translate response.
+            $updates = $this->translateUpdatePackages($rc, $this->lts);
+            $all_updates = $updates;
+
+            if ($this->lts === true) {
+                $this->updatesLTS = array_reduce(
+                    $updates,
+                    function ($carry, $item) {
+                        $carry[$item['version']] = 1;
+                        return $carry;
+                    },
+                    []
+                );
+
+                if ($all === true) {
+                    $rc = $this->post(
+                        [
+                            'action'    => 'newer_packages',
+                            'arguments' => ['lts' => false],
+                        ]
+                    );
+
+                    if (is_array($rc) !== true) {
+                        // Propagate last error from request.
+                        return null;
                     }
 
-                    return $carry;
-                },
-                []
-            );
+                    // Translate response.
+                    $all_updates = $this->translateUpdatePackages($rc, false);
+                }
+            }
+
+            $this->updates = $all_updates;
         }
 
         // Allows 'notify' follow current operation.
@@ -869,6 +948,10 @@ class Client
                     break;
                 }
             }
+        }
+
+        if ($this->lts === true) {
+            return $updates;
         }
 
         return $this->updates;
