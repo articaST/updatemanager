@@ -85,6 +85,7 @@ deploy_packagist:
   only:
     - tags
   stage: deploy
+  image: alpine/curl
   dependencies:
     - test
   needs:
