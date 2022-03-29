@@ -337,7 +337,7 @@ class Client
         $this->registrationCode = '';
         $this->license = '';
         $this->updates = [];
-        $this->$updatesLTS = [];
+        $this->updatesLTS = [];
         $this->dbh = null;
         $this->dbhHistory = null;
         $this->MR = 0;
@@ -876,9 +876,6 @@ class Client
     /**
      * Retrieves a list of updates available in target UMS.
      *
-     * @param boolean $all Return all updates always, if disable, return only
-     * pre-configured ones (lts / on - off).
-     *
      * @return array|null Results:
      * [
      *   [
@@ -889,14 +886,14 @@ class Client
      *   ]
      * ];
      */
-    public function listUpdates(bool $all=true):?array
+    public function listUpdates():?array
     {
         $this->nextUpdate = null;
         if (empty($this->updates) === true) {
             $rc = $this->post(
                 [
                     'action'    => 'newer_packages',
-                    'arguments' => ['lts' => $this->lts],
+                    'arguments' => ['lts' => true],
                 ]
             );
 
@@ -906,8 +903,8 @@ class Client
             }
 
             // Translate response.
-            $updates = $this->translateUpdatePackages($rc, $this->lts);
-            $all_updates = $updates;
+            $updates = $this->translateUpdatePackages($rc, true);
+            $lts_updates = $updates;
 
             if ($this->lts === true) {
                 $this->updatesLTS = array_reduce(
@@ -919,25 +916,34 @@ class Client
                     []
                 );
 
-                if ($all === true) {
-                    $rc = $this->post(
-                        [
-                            'action'    => 'newer_packages',
-                            'arguments' => ['lts' => false],
-                        ]
-                    );
+                $rc = $this->post(
+                    [
+                        'action'    => 'newer_packages',
+                        'arguments' => ['lts' => false],
+                    ]
+                );
 
-                    if (is_array($rc) !== true) {
-                        // Propagate last error from request.
-                        return null;
-                    }
-
-                    // Translate response.
-                    $all_updates = $this->translateUpdatePackages($rc, false);
+                if (is_array($rc) !== true) {
+                    // Propagate last error from request.
+                    return null;
                 }
+
+                // Translate response.
+                $all_updates = $this->translateUpdatePackages($rc, false);
             }
 
             $this->updates = $all_updates;
+        } else {
+            $lts_updates = array_filter(
+                $this->updates,
+                function ($item) {
+                    if ($item['lts'] === true) {
+                        return true;
+                    }
+
+                    return false;
+                }
+            );
         }
 
         // Allows 'notify' follow current operation.
@@ -951,7 +957,7 @@ class Client
         }
 
         if ($this->lts === true) {
-            return $updates;
+            return $lts_updates;
         }
 
         return $this->updates;
@@ -1524,8 +1530,8 @@ class Client
         $er = error_reporting();
         error_reporting(E_ALL ^ E_NOTICE);
         set_error_handler(
-            function ($errno, $errstr) {
-                throw new \Exception($errstr, $errno);
+            function ($errno, $errstr, $at, $line) {
+                throw new \Exception($errstr.' '.$at.':'.$line, $errno);
             },
             (E_ALL ^ E_NOTICE)
         );
@@ -1540,7 +1546,10 @@ class Client
 
             // 1. List updates and get next one.
             $this->notify(0, 'Retrieving updates.');
-            $updates = $this->listUpdates();
+            // Reload if needed.
+            $this->listUpdates();
+            // Work over all upgrades not LTS only.
+            $updates = $this->updates;
             $nextUpdate = null;
 
             if (is_array($updates) === true) {
@@ -1868,15 +1877,66 @@ class Client
 
 
     /**
-     * Update product to latest version available.
+     * Return next LTS version available.
+     *
+     * @return string|null Next version string or null if no version present.
+     */
+    public function getNextLTSVersion():?string
+    {
+        $lts = $this->listUpdates();
+        if ($lts === null) {
+            return null;
+        }
+
+        $target = array_shift($lts);
+
+        return $target['version'];
+    }
+
+
+    /**
+     * Return latest LTS version available.
+     *
+     * @return string|null Latest version string or null if no version present.
+     */
+    public function getLastLTSVersion():?string
+    {
+        $lts = $this->listUpdates();
+        if ($lts === null) {
+            return null;
+        }
+
+        $target = array_pop($lts);
+
+        return $target['version'];
+    }
+
+
+    /**
+     * Update product to latest version available or target if specified.
+     *
+     * @param string|null $target_version Target version if needed.
      *
      * @return string Last version reached.
      */
-    public function updateLastVersion():string
+    public function updateLastVersion(?string $target_version=null):string
     {
         $this->percentage = 0;
         $this->listUpdates();
-        $total_updates = count($this->updates);
+
+        if ($target_version !== null) {
+            // Update to target version.
+            $total_updates = 0;
+            foreach ($this->updates as $update) {
+                $total_updates++;
+                if ($update['version'] === $target_version) {
+                    break;
+                }
+            }
+        } else {
+            // All updates.
+            $total_updates = count($this->updates);
+        }
 
         if ($total_updates > 0) {
             $pct = (90 / $total_updates);
@@ -1887,6 +1947,11 @@ class Client
                 if ($rc === false) {
                     // Failed to upgrade to next version.
                     break;
+                }
+
+                if ($this->nextUpdate === $target_version) {
+                    // Reached end.
+                    $rc = null;
                 }
 
                 // If rc is null, latest version available is applied.
