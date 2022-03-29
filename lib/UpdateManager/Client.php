@@ -905,32 +905,29 @@ class Client
             // Translate response.
             $updates = $this->translateUpdatePackages($rc, true);
             $lts_updates = $updates;
+            $this->updatesLTS = array_reduce(
+                $updates,
+                function ($carry, $item) {
+                    $carry[$item['version']] = 1;
+                    return $carry;
+                },
+                []
+            );
 
-            if ($this->lts === true) {
-                $this->updatesLTS = array_reduce(
-                    $updates,
-                    function ($carry, $item) {
-                        $carry[$item['version']] = 1;
-                        return $carry;
-                    },
-                    []
-                );
+            $rc = $this->post(
+                [
+                    'action'    => 'newer_packages',
+                    'arguments' => ['lts' => false],
+                ]
+            );
 
-                $rc = $this->post(
-                    [
-                        'action'    => 'newer_packages',
-                        'arguments' => ['lts' => false],
-                    ]
-                );
-
-                if (is_array($rc) !== true) {
-                    // Propagate last error from request.
-                    return null;
-                }
-
-                // Translate response.
-                $all_updates = $this->translateUpdatePackages($rc, false);
+            if (is_array($rc) !== true) {
+                // Propagate last error from request.
+                return null;
             }
+
+            // Translate response.
+            $all_updates = $this->translateUpdatePackages($rc, false);
 
             $this->updates = $all_updates;
         } else {
