@@ -294,6 +294,13 @@ class Client
      */
     private $lts;
 
+    /**
+     * Function to be called after each package upgrade.
+     *
+     * @var callable|null
+     */
+    private $postUpdateFN;
+
 
     /**
      * Constructor.
@@ -317,6 +324,11 @@ class Client
      *                             - password
      *                             - host
      *                             - port
+     *                             - lts
+     *                             - postUpdateFN: function to be called after each upgrade.
+     *                                             will receive 2 parameters, version and string
+     *                                             containing 'server' if server upgrade or 'console'
+     *                                             if console upgrade was performed.
      *
      *                             (*) mandatory
      *                             (**) Optionally, set full url instead host-port-endpoint.
@@ -354,6 +366,7 @@ class Client
         $this->propagateUpdates = false;
         $this->offline = false;
         $this->lts = false;
+        $this->postUpdateFN = null;
 
         if (is_array($settings) === true) {
             if (isset($settings['homedir']) === true) {
@@ -437,6 +450,10 @@ class Client
 
             if (isset($settings['lts']) === true) {
                 $this->lts = $settings['lts'];
+            }
+
+            if (is_callable($settings['on_update']) === true) {
+                $this->postUpdateFN = $settings['on_update'];
             }
 
             if (isset($settings['endpoint']) === true) {
@@ -1868,6 +1885,16 @@ class Client
             $this->updateLocalDatabase();
         }
 
+        if (is_callable($this->postUpdateFN) === true) {
+            call_user_func(
+                $this->postUpdateFN,
+                
+                    $this->currentPackage,
+                    'console',
+                
+            );
+        }
+
         $this->unlock();
         return true;
     }
@@ -2197,6 +2224,15 @@ class Client
         // Success.
         $this->notify(100, 'Server update scheduled.');
         $this->lastError = null;
+
+        if (is_callable($this->postUpdateFN) === true) {
+            call_user_func(
+                $this->postUpdateFN,
+                $this->currentPackage,
+                'server',
+            );
+        }
+
         return true;
     }
 
