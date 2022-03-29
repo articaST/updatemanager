@@ -1888,10 +1888,8 @@ class Client
         if (is_callable($this->postUpdateFN) === true) {
             call_user_func(
                 $this->postUpdateFN,
-                
-                    $this->currentPackage,
-                    'console',
-                
+                $this->currentPackage,
+                'console'
             );
         }
 
@@ -2229,7 +2227,7 @@ class Client
             call_user_func(
                 $this->postUpdateFN,
                 $this->currentPackage,
-                'server',
+                'server'
             );
         }
 
