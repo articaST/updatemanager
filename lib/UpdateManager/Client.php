@@ -452,7 +452,9 @@ class Client
                 $this->lts = $settings['lts'];
             }
 
-            if (is_callable($settings['on_update']) === true) {
+            if (isset($settings['on_update']) === true
+                && is_callable($settings['on_update']) === true
+            ) {
                 $this->postUpdateFN = $settings['on_update'];
             }
 
